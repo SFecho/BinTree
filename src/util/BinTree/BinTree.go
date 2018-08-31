@@ -1,29 +1,61 @@
 package BinTree
 
 import (
-	"util/LinkedList"
-	"util"
+	"Util/Stack"
+	"Util"
+	"Util/Queue"
 )
 
 
 type TreeNode struct{
-	data util.Object
-	left * TreeNode
+	data  Util.Object
+	left  * TreeNode
 	right * TreeNode
 }
 
 type BinTree struct{
 	root * TreeNode
 	size int
-	comp util.Comparator
+	comp Util.Comparator
 }
 
-func New(comp func(o1 util.Object, o2 util.Object) int) *BinTree{
+func (this * BinTree)GetHeight() int{
+	queue := Queue.New()
+
+	var level_last_node_ptr * TreeNode = this.root
+	//var cur_ptr * TreeNode = nil
+
+	var cur_queue_tail_ptr  * TreeNode = nil
+
+	queue.Push(this.root)
+
+	var level int = 0
+
+	for queue.Empty() == false{
+		cur_ptr := queue.GetFront().(* TreeNode)
+		queue.Pop()
+		if cur_ptr.left != nil{
+			cur_queue_tail_ptr = cur_ptr.left
+			queue.Push(cur_queue_tail_ptr)
+		}
+		if cur_ptr.right != nil{
+			cur_queue_tail_ptr = cur_ptr.right
+			queue.Push(cur_queue_tail_ptr)
+		}
+		if level_last_node_ptr == cur_ptr{
+			level++
+			level_last_node_ptr = cur_queue_tail_ptr
+		}
+	}
+	return level
+}
+
+func New(comp func(o1 Util.Object, o2 Util.Object) int) *BinTree{
 	tree := &BinTree{nil, 0, comp}
 	return tree
 }
 
-func(this * BinTree) Insert(data util.Object)bool{
+func(this * BinTree) Insert(data Util.Object)bool{
 	new_node := new(TreeNode)
 	new_node.left = nil
 	new_node.right = nil
@@ -45,19 +77,92 @@ func(this * BinTree) Insert(data util.Object)bool{
 	return true
 }
 
-func(this * BinTree) InorderTraversal(display func(data util.Object)){
-	stk_ptr := LinkedList.New(this.comp)
+func(this * BinTree) InorderTraversal(display func(data Util.Object)){
+	stk_ptr := Stack.New()
 	search_ptr := this.root
 	for search_ptr != nil || stk_ptr.Empty() == false {
 		for search_ptr != nil{
-			stk_ptr.PushFront(search_ptr)
+			stk_ptr.Push(search_ptr)
 			search_ptr = search_ptr.left
 		}
 		if stk_ptr.Empty() == false{
-			search_ptr = stk_ptr.GetHead().GetData().(* TreeNode)
+			search_ptr = stk_ptr.GetTop().(* TreeNode)
 			display(search_ptr.data)
-			stk_ptr.PopFront()
+			stk_ptr.Pop()
 			search_ptr = search_ptr.right
 		}
 	}
 }
+
+func(this * BinTree) PreorderTraversal(display func(data Util.Object)){
+	stk_ptr := Stack.New()
+	search_ptr := this.root
+	for search_ptr != nil || stk_ptr.Empty() == false {
+		for search_ptr != nil{
+			display(search_ptr.data)
+			stk_ptr.Push(search_ptr)
+			search_ptr = search_ptr.left
+		}
+		if stk_ptr.Empty() == false{
+			search_ptr = stk_ptr.GetTop().(* TreeNode)
+
+			stk_ptr.Pop()
+			search_ptr = search_ptr.right
+		}
+	}
+}
+
+func (this * BinTree) PostorderTraversal(function func(data Util.Object)) {
+	stack_ptr := Stack.New()
+	var prev * TreeNode = nil
+	search_ptr := this.root
+
+	for search_ptr != nil || stack_ptr.Empty() == false{
+		if search_ptr != nil{
+			stack_ptr.Push(search_ptr)
+			search_ptr = search_ptr.left
+		}else{
+			search_ptr = stack_ptr.GetTop().(* TreeNode)
+			if search_ptr.right != nil && search_ptr.right != prev{
+				search_ptr = search_ptr.right
+				stack_ptr.Push(search_ptr)
+				search_ptr = search_ptr.left
+			}else{
+				search_ptr = stack_ptr.GetTop().(* TreeNode)
+				stack_ptr.Pop()
+				function(search_ptr.data)
+				prev = search_ptr
+				search_ptr = nil
+			}
+		}
+
+	}
+}
+
+func(this * BinTree) Delete(data Util.Object){
+	 del_node := &this.root
+	 for *del_node != nil{
+	 	if this.comp(data, (*del_node).data) < 0{
+			 del_node = &(*del_node).left
+		}else if this.comp(data, (*del_node).data) > 0{
+			del_node = &(*del_node).right
+		}else{
+			//case 1： 若当前删除节点的左儿子没节点
+			if (*del_node).left == nil {
+				*del_node = (*del_node).right
+			}else if (*del_node).right == nil{
+				*del_node = (*del_node).left
+			}else{
+				//找比当前要删除的值稍大的节点
+				tmp := &(*del_node).right
+				for (*tmp).left != nil{
+					tmp = &(*tmp).left
+				}
+				new_val := *tmp
+				(*del_node).data = new_val.data
+				*tmp = new_val.right
+			}
+		}
+	 }
+}
+

@@ -50,7 +50,7 @@ func (this * BinTree)GetHeight() int{
 	return level
 }
 
-func New(comp func(o1 Util.Object, o2 Util.Object) int) *BinTree{
+func New(comp Util.Comparator) *BinTree{
 	tree := &BinTree{nil, 0, comp}
 	return tree
 }
